@@ -8,6 +8,7 @@ export default function upload() {
   const [batchDetails, setBatchDetails] = useState({});
   const [batchId, setBatchId]           = useState(null);
   const [isLoading, setIsLoading]       = useState(false);
+  const progressInterval                = useRef('');
 
   const handleForm = (e) => {
     e.preventDefault();
@@ -35,11 +36,21 @@ export default function upload() {
     console.log(currentBatchId);
     fetch(`${API_ENDPOINT}/batch/${currentBatchId}`)
         .then( (res) => res.json())
-        .then( (data) => setBatchDetails(data))
+        .then( (data) => {
+          console.log(progressInterval.current)
+
+          if(data.progress > 100){
+            clearInterval(progressInterval.current)
+          }
+
+          setBatchDetails(data)
+        })
   }
 
+
   const updateProgress = () => {
-    setInterval(() => {
+    if(progressInterval.current !== '') return false;
+    progressInterval.current = setInterval(() => {
       fetchBatchDetails();
     }, 2000);    
   }
