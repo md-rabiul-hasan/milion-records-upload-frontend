@@ -3,13 +3,16 @@ import Layout from './components/Layout'
 
 export default function upload() {
 
-  const fileRef      = useRef();
-  const API_ENDPOINT = "http://127.0.0.1:8000/api/v1";
+  const fileRef                         = useRef();
+  const API_ENDPOINT                    = "http://127.0.0.1:8000/api/v1";
   const [batchDetails, setBatchDetails] = useState({});
-  const [batchId, setBatchId] = useState(null);
+  const [batchId, setBatchId]           = useState(null);
+  const [isLoading, setIsLoading]       = useState(false);
 
   const handleForm = (e) => {
     e.preventDefault();
+    if(isLoading) return false;
+
     const inputFile = fileRef.current;
     const file = inputFile.files[0];
     
@@ -17,12 +20,12 @@ export default function upload() {
 
     const fromData = new FormData();
     fromData.append("mycsv", file);
+    setIsLoading(true);
     fetch(`${API_ENDPOINT}/upload`, { method: "post", body: fromData })
         .then( (res) => res.json())
         .then( (data) => {
-          console.log(data);
+          setIsLoading(false);
           setBatchId(data.id);
-          fetchBatchDetails(data.id);
         })
 
   }
@@ -35,29 +38,37 @@ export default function upload() {
         .then( (data) => setBatchDetails(data))
   }
 
+  const updateProgress = () => {
+    setInterval(() => {
+      fetchBatchDetails();
+    }, 2000);    
+  }
+
   useEffect( () => {
-    setInterval( () => {
-      if(batchDetails.progress && batchDetails.progress !== 100){
-        fetchBatchDetails();
-      }
-    }, 2000);
-  }, []);
+
+    if(batchId != null){
+      updateProgress();
+    }    
+
+  }, [batchId]);
 
   return (
     <Layout>
-      {batchDetails.progress && 
+      {batchDetails.progress != undefined && 
         <section>
-          <h1 className='text-xl text-gray-800 text-center mb-5 font-bold'>File uploading.... ({batchDetails.progress}%)</h1>
-          <progress value={batchDetails.progress} max="100"></progress>
+          <h1 className='text-xl text-gray-800 text-center mb-5 font-bold'>Upload in progress ({batchDetails.progress}%)</h1>
+          <div className='w-full h-4 rounded-lg shadow-inner border'>
+            <div className='bg-green-700 w-full h-4 rounded-lg' style={{ width:`${batchDetails.progress}%` }}></div>
+          </div>
         </section>
       }
 
-    { !batchDetails.progress && 
+    { batchDetails.progress == undefined && 
       <section>
         <h1 className='text-xl text-gray-800 text-center mb-5 font-bold'>Choose a million record file to upload</h1>
         <form className='border rounded p-4' onSubmit={handleForm}>
           <input type="file" ref={fileRef}/>
-          <input type="submit" value="Upload" className="px-4 py-2 bg-gray-700 rounded text-white bg-indigo-500" />
+          <input type="submit" value="Upload" className={`px-4 py-2 rounded text-white ${isLoading ? 'bg-gray-400' : 'bg-gray-700'}`} />
         </form>
       </section>
     }
