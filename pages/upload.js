@@ -65,7 +65,7 @@ export default function upload() {
   }, [batchId]);
 
   useEffect( () => {
-    fetch(`${API_ENDPOINT}/batch/in-progress`)
+    fetch(`${API_ENDPOINT}/batch-info/in-progress`)
     .then( (res) => res.json())
     .then( (data) => {
       setBatchId(data.id)
